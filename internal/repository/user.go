@@ -38,6 +38,19 @@ func (r *UserRepo) Get(username string) (*domain.User, error) {
 	}, nil
 }
 
+func (r *UserRepo) GetByUsernamePassword(username, password string) (*domain.User, error) {
+	u := models.User{}
+	if err := r.db.Where("username = ? AND password = ?", username, password).First(&u).Error; err != nil {
+		return nil, err
+	}
+	return &domain.User{
+		Username: u.Username,
+		Email:    u.Email,
+		Name:     u.Name,
+		Age:      u.Age,
+	}, nil
+}
+
 func (r *UserRepo) Update(username string, user *domain.User) error {
 	u := models.User{
 		Email: user.Email,
@@ -45,4 +58,8 @@ func (r *UserRepo) Update(username string, user *domain.User) error {
 		Age:   user.Age,
 	}
 	return r.db.Where("username = ?", username).Updates(&u).Error
+}
+
+func (r *UserRepo) ChangePassword(username, password string) error {
+	return r.db.Where("username = ?", username).Update("password", password).Error
 }

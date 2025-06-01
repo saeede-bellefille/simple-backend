@@ -16,10 +16,12 @@ type userHandler struct {
 }
 
 func setupUser(g *echo.Group, db *gorm.DB) {
-	service := user.New(repository.NewUserRepo(db))
+	repo := repository.NewUserRepo(db)
+	service := user.New(repo)
 	h := &userHandler{service: service}
 	g.GET("/:username", h.Get)
 	g.POST("/register", h.Register)
+	g.POST("/login", h.Login)
 	g.GET("/test", h.Test)
 }
 
@@ -47,6 +49,18 @@ func (h *userHandler) Register(c echo.Context) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 	return c.NoContent(http.StatusNoContent)
+}
+
+func (h *userHandler) Login(c echo.Context) error {
+	var data dto.LoginUser
+	if err := c.Bind(&data); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	u, err := h.service.Login(data.Username, data.Password)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+	return c.JSON(http.StatusOK, u)
 }
 
 func (h *userHandler) Test(c echo.Context) error {

@@ -32,3 +32,11 @@ func (u *Service) Register(user *domain.User, password, repeat string) error {
 	}
 	return u.repo.Create(user, password)
 }
+
+func (u *Service) Login(username, password string) (*domain.User, error) {
+	return u.repo.GetByUsernamePassword(username, password)
+}
+
+func (u *Service) changepassword(username, password string) error {
+	return u.repo.ChangePassword(username, password)
+}
