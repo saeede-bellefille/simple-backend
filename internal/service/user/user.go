@@ -36,7 +36,23 @@ func (u *Service) Register(user *domain.User, password, repeat string) error {
 func (u *Service) Login(username, password string) (*domain.User, error) {
 	return u.repo.GetByUsernamePassword(username, password)
 }
+func (u *Service) UpdateProfile(username string, user *domain.User) error {
+	return u.repo.Update(username, user)
+}
 
-func (u *Service) changepassword(username, password string) error {
-	return u.repo.ChangePassword(username, password)
+func (u *Service) ChangePassword(username, currentPassword, newPassword, repeatPassword string) error {
+	_, err := u.repo.GetByUsernamePassword(username, currentPassword)
+	if err != nil {
+		return errors.New("current password is incorrect")
+	}
+
+	if newPassword != repeatPassword {
+		return errors.New("new passwords do not match")
+	}
+
+	if len(newPassword) < 6 {
+		return errors.New("new password is too short (minimum 6 characters)")
+	}
+
+	return u.repo.ChangePassword(username, newPassword)
 }

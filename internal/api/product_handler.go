@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/saeede-bellefille/simple-backend/internal/api/dto"
 	"github.com/saeede-bellefille/simple-backend/internal/domain"
+	"github.com/saeede-bellefille/simple-backend/internal/middleware"
 	"github.com/saeede-bellefille/simple-backend/internal/repository"
 	"github.com/saeede-bellefille/simple-backend/internal/service/product"
 	"gorm.io/gorm"
@@ -20,6 +21,8 @@ func setupProduct(g *echo.Group, db *gorm.DB) {
 	repo := repository.NewProductRepo(db)
 	service := product.New(repo)
 	h := &productHandler{service: service}
+	g.Use(middleware.JWT())
+	g.GET("/list", h.List)
 	g.GET("/:id", h.Get)
 	g.POST("/create", h.Create)
 	g.PUT("/:id", h.Update)
