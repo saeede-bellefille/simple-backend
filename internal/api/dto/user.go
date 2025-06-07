@@ -1,6 +1,6 @@
 package dto
 
-type RegisdterUser struct {
+type UserRegister struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Repeat   string `json:"repeat_password"`
@@ -9,7 +9,11 @@ type RegisdterUser struct {
 	Age      int    `json:"age"`
 }
 
-type LoginUser struct {
+type UserLogin struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+type UserRole struct {
+	Role string `json:"role"`
 }

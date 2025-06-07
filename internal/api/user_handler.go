@@ -30,13 +30,18 @@ func setupUser(g *echo.Group, db *gorm.DB) {
 	protected.GET("/:username", h.Get)
 	protected.PUT("/profile", h.UpdateProfile)
 	protected.POST("/change-password", h.ChangePassword)
+
+	admin := g.Group("", middleware.JWT(), middleware.RequireRole(domain.RoleAdmin))
+	admin.GET("/list", h.List)
+	admin.PUT("/:username/role", h.UpdateRole)
 }
 
 func (h *userHandler) Get(c echo.Context) error {
 	tokenUsername := c.Get("username").(string)
+	tokenRole := c.Get("role").(string)
 	requestedUsername := c.Param("username")
 
-	if tokenUsername != requestedUsername {
+	if tokenRole != string(domain.RoleAdmin) && tokenUsername != requestedUsername {
 		return c.JSON(http.StatusForbidden, &dto.Error{
 			Message: "Access denied",
 		})
@@ -50,9 +55,18 @@ func (h *userHandler) Get(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, u)
 }
+func (h *userHandler) List(c echo.Context) error {
+	users, err := h.service.List()
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, &dto.Error{
+			Message: err.Error(),
+		})
+	}
+	return c.JSON(http.StatusOK, users)
+}
 
 func (h *userHandler) Register(c echo.Context) error {
-	var data dto.RegisdterUser
+	var data dto.UserRegister
 	if err := c.Bind(&data); err != nil {
 		return c.JSON(http.StatusBadRequest, &dto.Error{
 			Message: err.Error(),
@@ -64,6 +78,7 @@ func (h *userHandler) Register(c echo.Context) error {
 		Email:    data.Email,
 		Name:     data.Name,
 		Age:      data.Age,
+		Role:     domain.RoleUser,
 	}
 
 	err := h.service.Register(&user, data.Password, data.Repeat)
@@ -73,13 +88,12 @@ func (h *userHandler) Register(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusCreated, map[string]string{
-		"message": "User registered successfully",
+	return c.JSON(http.StatusCreated, &dto.Error{
+		Message: "User registered successfully",
 	})
 }
-
 func (h *userHandler) Login(c echo.Context) error {
-	var data dto.LoginUser
+	var data dto.UserLogin
 	if err := c.Bind(&data); err != nil {
 		return c.JSON(http.StatusBadRequest, &dto.Error{
 			Message: err.Error(),
@@ -93,7 +107,7 @@ func (h *userHandler) Login(c echo.Context) error {
 		})
 	}
 
-	token, err := auth.GenerateToken(u.Username)
+	token, err := auth.GenerateToken(u.Username, string(u.Role))
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, &dto.Error{
 			Message: "Could not generate token",
@@ -107,6 +121,7 @@ func (h *userHandler) Login(c echo.Context) error {
 			Email:    u.Email,
 			Name:     u.Name,
 			Age:      u.Age,
+			Role:     string(u.Role),
 		},
 	}
 
@@ -137,8 +152,31 @@ func (h *userHandler) UpdateProfile(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "Profile updated successfully",
+	return c.JSON(http.StatusOK, &dto.Error{
+		Message: "Profile updated successfully",
+	})
+}
+
+func (h *userHandler) UpdateRole(c echo.Context) error {
+	username := c.Param("username")
+
+	var data dto.UserRole
+	if err := c.Bind(&data); err != nil {
+		return c.JSON(http.StatusBadRequest, &dto.Error{
+			Message: err.Error(),
+		})
+	}
+
+	role := domain.Role(data.Role)
+	err := h.service.UpdateRole(username, role)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, &dto.Error{
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, &dto.Error{
+		Message: "Role updated successfully",
 	})
 }
 
@@ -164,8 +202,8 @@ func (h *userHandler) ChangePassword(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "Password changed successfully",
+	return c.JSON(http.StatusOK, &dto.Error{
+		Message: "Password changed successfully",
 	})
 }
 

@@ -5,4 +5,5 @@ type User struct {
 	Email    string
 	Name     string
 	Age      int
+	Role     Role
 }

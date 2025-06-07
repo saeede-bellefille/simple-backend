@@ -31,6 +31,7 @@ func JWT() echo.MiddlewareFunc {
 				})
 			}
 			c.Set("username", claims.Username)
+			c.Set("role", claims.Role)
 			return next(c)
 		}
 	}

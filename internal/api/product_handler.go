@@ -24,9 +24,11 @@ func setupProduct(g *echo.Group, db *gorm.DB) {
 	g.Use(middleware.JWT())
 	g.GET("/list", h.List)
 	g.GET("/:id", h.Get)
-	g.POST("/create", h.Create)
-	g.PUT("/:id", h.Update)
-	g.DELETE("/:id", h.Delete)
+	adminMod := g.Group("", middleware.RequireRole(domain.RoleAdmin, domain.RoleModerator))
+	adminMod.POST("/create", h.Create)
+	adminMod.PUT("/:id", h.Update)
+	admin := g.Group("", middleware.RequireRole(domain.RoleAdmin))
+	admin.DELETE("/:id", h.Delete)
 }
 
 func (h *productHandler) Get(c echo.Context) error {

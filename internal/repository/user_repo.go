@@ -21,6 +21,7 @@ func (r *UserRepo) Create(user *domain.User, password string) error {
 		Email:    user.Email,
 		Name:     user.Name,
 		Age:      user.Age,
+		Role:     string(user.Role),
 	}
 	return r.db.Create(&u).Error
 }
@@ -35,6 +36,7 @@ func (r *UserRepo) Get(username string) (*domain.User, error) {
 		Email:    u.Email,
 		Name:     u.Name,
 		Age:      u.Age,
+		Role:     domain.Role(u.Role),
 	}, nil
 }
 
@@ -48,6 +50,7 @@ func (r *UserRepo) GetByUsernamePassword(username, password string) (*domain.Use
 		Email:    u.Email,
 		Name:     u.Name,
 		Age:      u.Age,
+		Role:     domain.Role(u.Role),
 	}, nil
 }
 
@@ -59,7 +62,29 @@ func (r *UserRepo) Update(username string, user *domain.User) error {
 	}
 	return r.db.Where("username = ?", username).Updates(&u).Error
 }
+func (r *UserRepo) UpdateRole(username string, role domain.Role) error {
+	return r.db.Where("username = ?", username).Update("role", string(role)).Error
+}
 
 func (r *UserRepo) ChangePassword(username, password string) error {
 	return r.db.Where("username = ?", username).Update("password", password).Error
+}
+
+func (r *UserRepo) List() ([]domain.User, error) {
+	var users []models.User
+	if err := r.db.Find(&users).Error; err != nil {
+		return nil, err
+	}
+
+	var domainUsers []domain.User
+	for _, u := range users {
+		domainUsers = append(domainUsers, domain.User{
+			Username: u.Username,
+			Email:    u.Email,
+			Name:     u.Name,
+			Age:      u.Age,
+			Role:     domain.Role(u.Role),
+		})
+	}
+	return domainUsers, nil
 }

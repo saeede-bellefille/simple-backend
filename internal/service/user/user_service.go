@@ -23,12 +23,22 @@ func (u *Service) Read(username string) (*domain.User, error) {
 	return u.repo.Get(username)
 }
 
+func (u *Service) List() ([]domain.User, error) {
+	return u.repo.List()
+}
+
 func (u *Service) Register(user *domain.User, password, repeat string) error {
 	if password != repeat {
 		return errors.New("Password do not match!")
 	}
 	if len(password) < 6 {
 		return errors.New("Password is too short")
+	}
+	if user.Role == "" {
+		user.Role = domain.RoleUser
+	}
+	if !user.Role.IsValid() {
+		return errors.New("Invalid role specified")
 	}
 	return u.repo.Create(user, password)
 }
@@ -38,6 +48,12 @@ func (u *Service) Login(username, password string) (*domain.User, error) {
 }
 func (u *Service) UpdateProfile(username string, user *domain.User) error {
 	return u.repo.Update(username, user)
+}
+func (u *Service) UpdateRole(username string, role domain.Role) error {
+	if !role.IsValid() {
+		return errors.New("Invalid role specified")
+	}
+	return u.repo.UpdateRole(username, role)
 }
 
 func (u *Service) ChangePassword(username, currentPassword, newPassword, repeatPassword string) error {

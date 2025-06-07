@@ -10,4 +10,5 @@ type User struct {
 	Email    string `json:"email"`
 	Name     string `json:"name"`
 	Age      int    `json:"age"`
+	Role     string `json:"role"`
 }
